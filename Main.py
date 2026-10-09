@@ -1,0 +1,1 @@
+from starDatabase import stars
