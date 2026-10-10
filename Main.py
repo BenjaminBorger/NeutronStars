@@ -18,8 +18,12 @@ def find_eps_c(iter,rel): # rel is boolean True or false if true: relatavistic a
     realRadius = obj[iter, 0]*1000 #in meters
     realMass = obj[iter, 1]*M_sun.value # kg
     
-    if rel: K = pdeSolver.K_rel,gamma = 4/3
-    else: K = pdeSolver.K_nonrel ,gamma = 5/3
+    if rel: 
+        K = pdeSolver.K_rel
+        gamma = 4/3
+    else: 
+        K = pdeSolver.K_nonrel
+        gamma = 5/3
 
 
     print("Radius: ",float(realRadius), "     Mass: ", float(realMass)) #check that all is ok thusfar
@@ -27,19 +31,25 @@ def find_eps_c(iter,rel): # rel is boolean True or false if true: relatavistic a
     epsilonGuess = (realMass/((4/3)*np.pi*realRadius**3))*(c**2) # guess assuming const density
     epsilonSpace = np.logspace(np.log10(epsilonGuess)-3,np.log10(epsilonGuess)+3,40) # defines an area which is reasonable for eps to be in
 
-    iteratedMs = np.array([]) # these are the Ms which are made from guesses in epsilonspace 
-    #betweent the difference of the iterated M and the real M
-    intervals= np.array([]) #these will be the intervals in epsilonspace within which contain a crossover of sign
-    firstRun = True
-    for i in range(len(epsilonSpace)+1):
-        iteratedR,iteratedM = pdeSolver.solve(epsilonSpace[i],K,gamma,allpoints=False)
-        np.append(iteratedMs,iteratedM) # should be same number of iterated Ms as there are points in epsilon space ie 40
-        if firstRun == True:
-            firstRun = False
-        elif np.sign(iteratedMs[i-1]-realMass) != np.sign(iteratedMs[i]-realMass):
-            intervals._r([epsilonSpace[i-1],epsilonSpace[i]])
+    iteratedRs = np.full(len(epsilonSpace), np.nan)
+    iteratedMs = np.full(len(epsilonSpace), np.nan)
+    
+    intervals= []#these will be the intervals in epsilonspace within which contain a crossover of sign
+    for i in range(len(epsilonSpace)):
+        R, M = pdeSolver.solve(epsilonSpace[i], K, gamma, allpoints=False)
+        iteratedRs[i] = R
+        iteratedMs[i] = M
+
+        if i == 0 or np.isnan(iteratedMs[i]) or np.isnan(iteratedMs[i-1]):
+            continue
+        if np.sign(iteratedMs[i-1] - realMass) != np.sign(iteratedMs[i] - realMass):
+                intervals.append([epsilonSpace[i-1], epsilonSpace[i]])
+    print("NaNs:", np.isnan(iteratedMs).sum(), "of", len(iteratedMs))
+    print("M/realMass:", iteratedMs/realMass)
+    print("R/realRadius:", iteratedRs/realRadius)   # <-- add here, after the loop
+    
     eps_C_Real = 0
-    goodEpsis = np.array([])
+    goodEpsis = []
     for interval in intervals:
         def massDiffFunc(epsilonVal):
             
@@ -64,10 +74,7 @@ def find_eps_c(iter,rel): # rel is boolean True or false if true: relatavistic a
 
     return bestE
                 
-                
 
 
-    #for i in range(0,10):
-            #iteratedR,iteratedM = pdeSolver.solve(epsilonGuess,K,gamma,allpoints=False)
-    
-    return (float(radius),float(mass))
+
+print(find_eps_c(0,True))
