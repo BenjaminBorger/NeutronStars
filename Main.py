@@ -44,10 +44,7 @@ def find_eps_c(iter,rel): # rel is boolean True or false if true: relatavistic a
             continue
         if np.sign(iteratedMs[i-1] - realMass) != np.sign(iteratedMs[i] - realMass):
                 intervals.append([epsilonSpace[i-1], epsilonSpace[i]])
-    print("NaNs:", np.isnan(iteratedMs).sum(), "of", len(iteratedMs))
-    print("M/realMass:", iteratedMs/realMass)
-    print("R/realRadius:", iteratedRs/realRadius)   # <-- add here, after the loop
-    
+   
     eps_C_Real = 0
     goodEpsis = []
     for interval in intervals:
@@ -75,6 +72,18 @@ def find_eps_c(iter,rel): # rel is boolean True or false if true: relatavistic a
     return bestE
                 
 
-
-
-print(find_eps_c(0,True))
+####plotting
+plt
+#rel
+for i in range(len(obj)):
+    iterEps_C = find_eps_c(i,rel=True)
+    rRel, mRel, radius_grid, states = pdeSolver.solve(iterEps_C,pdeSolver.K_rel,4/3,allpoints=True)
+    mass_profile = states[0]
+    pressure_profile = states[1]
+    
+    plt.plot(radius_grid,mass_profile)
+plt.title('Rel Rad Mass Relation')
+plt.xlabel('Radius')
+plt.ylabel('Mass')    
+plt.show()
+#nonrel

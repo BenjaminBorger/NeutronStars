@@ -12,7 +12,7 @@ K_nonrel = hbar**2/(15*np.pi**2*m_e) * (3*np.pi**2/(mu_e*m_n*c**2))**(5/3)
 K_rel    = hbar*c/(12*np.pi**2)      * (3*np.pi**2/(mu_e*m_n*c**2))**(4/3)
 
 
-def solve(eps_c,K,gamma,allpoints = False):
+def solve(eps_c,K,gamma,allpoints = False): # eps_c is given through findepsc
     def f(r,y):
         M,P = y
         eps = (max(P, 0)/K)**(1/gamma)
@@ -35,7 +35,7 @@ def solve(eps_c,K,gamma,allpoints = False):
     pts = solve_ivp(f,(r0,10e9),[m0,p0],events = surface, rtol = 1e-5,atol = [m0*1e-10, p0*1e-12],dense_output= allpoints)
     R = pts.t_events[0][0]
     M = pts.y_events[0][0][0]
-    if allpoints == True: return (R,M,allpoints)
+    if allpoints == True: return (R,M, pts.t, pts.y)
     else: return (R,M)
 
 
