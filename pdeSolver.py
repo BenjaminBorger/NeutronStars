@@ -12,7 +12,7 @@ K_nonrel = hbar**2/(15*np.pi**2*m_e) * (3*np.pi**2/(mu_e*m_n*c**2))**(5/3)
 K_rel    = hbar*c/(12*np.pi**2)      * (3*np.pi**2/(mu_e*m_n*c**2))**(4/3)
 
 
-def pdeSolver(eps_c,K,gamma,allpoints = False):
+def solve(eps_c,K,gamma,allpoints = False):
     def f(r,y):
         P,M = y
         eps = (max(P, 0)/K)**(1/gamma) 
