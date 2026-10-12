@@ -7,7 +7,7 @@ from scipy.constants import G, c, hbar, m_e, m_n
 from astropy.constants import M_sun
 import pdeSolver
 from matplotlib.colors import LinearSegmentedColormap
-from pdeSolver import gammaNonRel,gammaRel,K_nonrel,K_rel
+from pdeSolver import gammaNonRel,gammaRel,K_nonrel,K_rel,triggerPressure
 
 
 
@@ -15,21 +15,16 @@ from pdeSolver import gammaNonRel,gammaRel,K_nonrel,K_rel
 def find_eps_c(iter,rel): # rel is boolean True or false if true: relatavistic and if not, not relatavistic
     '''This function makes a guess of epsilon
     assuming constant density and then takes iterations of the pde solver and hones in 
-    on the correct value of epsilon. After that a real measurement can be made.'''
+    on the correct value of epsilon for each star. After that a real measurement can be made.'''
     
     
     realRadius = obj[iter, 0]*1000 # radius of example star in meters 
     realMass = obj[iter, 1]*M_sun.value # mass of example star kg
     
-    if rel: #change constnats approperiately
-        K = pdeSolver.K_rel
-        gamma = 4/3
-    else: 
-        K = pdeSolver.K_nonrel
-        gamma = 5/3
+    K = pdeSolver.K_rel
+    gamma = 4/3
 
-
-    print("Radius: ",float(realRadius), "     Mass: ", float(realMass)) #check that all is ok thusfar
+    #print("Radius: ",float(realRadius), "     Mass: ", float(realMass)) #check that all is ok thusfar
     
     epsilonGuess = (realMass/((4/3)*np.pi*realRadius**3))*(c**2) # guess assuming const density
     epsilonSpace = np.logspace(np.log10(epsilonGuess)-3,np.log10(epsilonGuess)+3,40) # defines an area which is reasonable for eps to be in
@@ -39,7 +34,8 @@ def find_eps_c(iter,rel): # rel is boolean True or false if true: relatavistic a
     
     intervals= []#these will be the intervals in epsilonspace within which contain a crossover of sign
     for i in range(len(epsilonSpace)): # loop for each value in epsilon space(will loop 40 times)
-        R,M = pdeSolver.solve(epsilonSpace[i], K, gamma, allpoints=False) # solve the PDE for this value of epsilon and only return the finishing mass and radius
+        
+        R,M = pdeSolver.solve(epsilonSpace[i], allpoints=False) # solve the PDE for this value of epsilon and only return the finishing mass and radius
         iteratedRs[i] = R # add these returned values to thir respective arrays
         iteratedMs[i] = M
 
@@ -56,7 +52,7 @@ def find_eps_c(iter,rel): # rel is boolean True or false if true: relatavistic a
     for interval in intervals: # go through each interval
         def massDiffFunc(epsilonVal): #simply solves the equations with this value of epsilon and creates a function with m-realMass
             
-            r,m = pdeSolver.solve(epsilonVal,K,gamma,allpoints=False)
+            r,m = pdeSolver.solve(epsilonVal,allpoints=False)
             
             return m-realMass
 
@@ -71,7 +67,7 @@ def find_eps_c(iter,rel): # rel is boolean True or false if true: relatavistic a
     for e in goodEpsis: # for each good espilon 
         '''for each good espsilon, check whether the error is better than the last one 
         if its the best, when the loop ends itll return this value'''
-        r,m = pdeSolver.solve(e,K,gamma,allpoints=False)
+        r,m = pdeSolver.solve(e,allpoints=False)
         if (np.abs(r/realRadius-1))<bestErr:
             bestE = e
             bestErr = np.abs(r/realRadius-1)
@@ -79,7 +75,7 @@ def find_eps_c(iter,rel): # rel is boolean True or false if true: relatavistic a
     return bestE
                 
 
-####plotting
+#plotting
 #could maybe add some sort of circle that has the pressure so as the radius goes outwards, it changes colour
 #rel
 
@@ -90,14 +86,14 @@ for i in range(len(obj)):
     if iterEps_C is None:
         print(f"Skipping object {i}: no valid epsilon_c")
         continue
-    r, m, radius_grid, states = pdeSolver.solve(iterEps_C,K_nonrel,gammaNonRel,allpoints=True)
+    r, m, radius_grid, states = pdeSolver.solve(iterEps_C,allpoints=True)
     mass_profile = states[0]
     pressure_profile = states[1]
-
-    plt.plot(radius_grid,mass_profile)
+    
+    plt.plot(radius_grid, mass_profile)
 plt.title('Rel Rad Mass Relation')
-plt.xlabel('Radius')
-plt.ylabel('Mass')    
+plt.xlabel('Mass (Kg)')
+plt.ylabel('Radius (m)')    
 plt.show()
 
 
