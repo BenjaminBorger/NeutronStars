@@ -9,7 +9,7 @@ import pdeSolver
 from matplotlib.colors import LinearSegmentedColormap
 from pdeSolver import gammaNonRel,gammaRel,K_nonrel,K_rel,triggerPressure
 
-
+###Problem at the moment is that the radius it calculates is very differnt to the radius I give it. 
 
 
 def find_eps_c(iter,rel): # rel is boolean True or false if true: relatavistic and if not, not relatavistic
@@ -77,7 +77,6 @@ def find_eps_c(iter,rel): # rel is boolean True or false if true: relatavistic a
 
 #plotting
 #could maybe add some sort of circle that has the pressure so as the radius goes outwards, it changes colour
-#rel
 
 for i in range(len(obj)):
     realMass = obj[i][1]*M_sun.value
@@ -87,6 +86,7 @@ for i in range(len(obj)):
         print(f"Skipping object {i}: no valid epsilon_c")
         continue
     r, m, radius_grid, states = pdeSolver.solve(iterEps_C,allpoints=True)
+    print(r-realRadius)
     mass_profile = states[0]
     pressure_profile = states[1]
     
@@ -95,18 +95,6 @@ plt.title('Rel Rad Mass Relation')
 plt.xlabel('Mass (Kg)')
 plt.ylabel('Radius (m)')    
 plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def plot_pressure():

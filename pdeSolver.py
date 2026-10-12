@@ -5,7 +5,7 @@ from scipy.optimize import brentq
 from scipy.constants import G, c, hbar, m_e, m_n
 from astropy.constants import M_sun
 import sys
-
+from starDatabase import obj
 def delete_last_line(): # got from stackoverflow https://stackoverflow.com/questions/44565704/how-to-clear-only-last-one-line-in-python-output-console
     # cursor up one line
     sys.stdout.write('\x1b[1A')
@@ -41,9 +41,10 @@ def solve(eps_c,allpoints = False): # eps_c is given through findepsc
     p0 = K_rel*eps_c**gammaRel #initial pressure polytrope
 
     def surface(r, y,K,gamma): # define a surface where pressure basically equals zero and stop there
-        return y[1] -( 1e-10 * min(p0, triggerPressure)  )                
+        return y[1] #-( 1e-10 * min(p0, triggerPressure)  )                
     surface.terminal = True
     surface.direction = -1
+
 
     def switch(r,y,K,gamma):
         return y[1]-triggerPressure
@@ -55,6 +56,7 @@ def solve(eps_c,allpoints = False): # eps_c is given through findepsc
     
     
     if p0<=triggerPressure:
+        p0 = K_nonrel*eps_c**gammaNonRel 
         totalStarisNonRel = solve_ivp(f,(r0,10e9),[m0,p0],args = (K_nonrel,gammaNonRel),events = surface, rtol = 1e-5,atol = [m0*1e-10, p0*1e-12],dense_output= allpoints) #simultaneously solve the equations
         R = totalStarisNonRel.t_events[0][0]
         M = totalStarisNonRel.y_events[0][0][0] # takes the last mass of star
@@ -62,7 +64,7 @@ def solve(eps_c,allpoints = False): # eps_c is given through findepsc
         ys = totalStarisNonRel.y # all the fvlaues of mass
     else:
 
-        relPart = solve_ivp(f,(r0,10e9),[m0,p0],args = (K_rel,gammaRel),events = switch, rtol = 1e-5,atol = [m0*1e-10, p0*1e-12],dense_output= allpoints) #simultaneously solve the equations
+        relPart = solve_ivp(f,(r0,10e9),[m0,p0],args = (K_rel,gammaRel),events = [switch,surface], rtol = 1e-5,atol = [m0*1e-10, p0*1e-12],dense_output= allpoints) #simultaneously solve the equations
     
         r_event = relPart.t_events[0][0] # Takes the last radius of centre 
         y_event = relPart.y_events[0][0] # takes the last mass of centre
