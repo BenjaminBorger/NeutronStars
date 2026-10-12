@@ -7,9 +7,9 @@ from scipy.constants import G, c, hbar, m_e, m_n
 from astropy.constants import M_sun
 import pdeSolver
 from matplotlib.colors import LinearSegmentedColormap
-from pdeSolver import gammaNonRel,gammaRel,K_nonrel,K_rel,triggerPressure
-
-###Problem at the moment is that the radius it calculates is very differnt to the radius I give it. 
+#from pdeSolver import gammaNonRel,gammaRel,K_nonrel,K_rel,triggerPressure
+from test import solve
+###Problem at the moment is that the radius it calculates is differnt to the radius I give it. 
 
 
 def find_eps_c(iter,rel): # rel is boolean True or false if true: relatavistic and if not, not relatavistic
@@ -35,7 +35,7 @@ def find_eps_c(iter,rel): # rel is boolean True or false if true: relatavistic a
     intervals= []#these will be the intervals in epsilonspace within which contain a crossover of sign
     for i in range(len(epsilonSpace)): # loop for each value in epsilon space(will loop 40 times)
         
-        R,M = pdeSolver.solve(epsilonSpace[i], allpoints=False) # solve the PDE for this value of epsilon and only return the finishing mass and radius
+        R,M = solve(epsilonSpace[i], allpoints=False) # solve the PDE for this value of epsilon and only return the finishing mass and radius
         iteratedRs[i] = R # add these returned values to thir respective arrays
         iteratedMs[i] = M
 
@@ -52,7 +52,7 @@ def find_eps_c(iter,rel): # rel is boolean True or false if true: relatavistic a
     for interval in intervals: # go through each interval
         def massDiffFunc(epsilonVal): #simply solves the equations with this value of epsilon and creates a function with m-realMass
             
-            r,m = pdeSolver.solve(epsilonVal,allpoints=False)
+            r,m = solve(epsilonVal,allpoints=False)
             
             return m-realMass
 
@@ -67,14 +67,13 @@ def find_eps_c(iter,rel): # rel is boolean True or false if true: relatavistic a
     for e in goodEpsis: # for each good espilon 
         '''for each good espsilon, check whether the error is better than the last one 
         if its the best, when the loop ends itll return this value'''
-        r,m = pdeSolver.solve(e,allpoints=False)
+        r,m = solve(e,allpoints=False)
         if (np.abs(r/realRadius-1))<bestErr:
             bestE = e
             bestErr = np.abs(r/realRadius-1)
 
     return bestE
                 
-
 #plotting
 #could maybe add some sort of circle that has the pressure so as the radius goes outwards, it changes colour
 
@@ -85,15 +84,16 @@ for i in range(len(obj)):
     if iterEps_C is None:
         print(f"Skipping object {i}: no valid epsilon_c")
         continue
-    r, m, radius_grid, states = pdeSolver.solve(iterEps_C,allpoints=True)
-    print(r-realRadius)
+    r, m, radius_grid, states = solve(iterEps_C,allpoints=True)
+    print(f"modeled: {r / 1000:.2f} km, observed: {realRadius / 1000:.2f} km, "
+          f"difference: {(r - realRadius) / 1000:.2f} km")
     mass_profile = states[0]
     pressure_profile = states[1]
     
-    plt.plot(radius_grid, mass_profile)
+    plt.plot(radius_grid,mass_profile)
 plt.title('Rel Rad Mass Relation')
-plt.xlabel('Mass (Kg)')
-plt.ylabel('Radius (m)')    
+plt.ylabel('Mass (Kg)')
+plt.xlabel('Radius (m)')    
 plt.show()
 
 

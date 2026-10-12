@@ -25,9 +25,9 @@ which is when pressure = ((m_e**4)*(c**5))/(12*(pi**2)*(hbar**3))
 This will be called the trigger pressure '''
 
 def solve(eps_c,allpoints = False): # eps_c is given through findepsc
-    delete_last_line()
-    if not allpoints: print(f"Central value of Epsilon Guess = {eps_c}")
-    else: print(f"Central value of Epsilon Final = {eps_c}")
+    #delete_last_line()
+    #if not allpoints: print(f"Central value of Epsilon Guess = {eps_c}")
+    #else: print(f"Central value of Epsilon Final = {eps_c}")
 
     def f(r,y,K,gamma):
         M,P = y
@@ -41,7 +41,7 @@ def solve(eps_c,allpoints = False): # eps_c is given through findepsc
     p0 = K_rel*eps_c**gammaRel #initial pressure polytrope
 
     def surface(r, y,K,gamma): # define a surface where pressure basically equals zero and stop there
-        return y[1] #-( 1e-10 * min(p0, triggerPressure)  )                
+        return y[1] - (1e-10 * min(p0, triggerPressure))                 
     surface.terminal = True
     surface.direction = -1
 
@@ -57,20 +57,20 @@ def solve(eps_c,allpoints = False): # eps_c is given through findepsc
     
     if p0<=triggerPressure:
         p0 = K_nonrel*eps_c**gammaNonRel 
-        totalStarisNonRel = solve_ivp(f,(r0,10e9),[m0,p0],args = (K_nonrel,gammaNonRel),events = surface, rtol = 1e-5,atol = [m0*1e-10, p0*1e-12],dense_output= allpoints) #simultaneously solve the equations
+        totalStarisNonRel = solve_ivp(f,(r0,10e9),[m0,p0],args = (K_nonrel,gammaNonRel),events = surface, rtol = 1e-8,atol = [m0*1e-10, p0*1e-12],dense_output= allpoints) #simultaneously solve the equations
         R = totalStarisNonRel.t_events[0][0]
         M = totalStarisNonRel.y_events[0][0][0] # takes the last mass of star
         rs = totalStarisNonRel.t # these are all the values of radius 
         ys = totalStarisNonRel.y # all the fvlaues of mass
     else:
 
-        relPart = solve_ivp(f,(r0,10e9),[m0,p0],args = (K_rel,gammaRel),events = [switch,surface], rtol = 1e-5,atol = [m0*1e-10, p0*1e-12],dense_output= allpoints) #simultaneously solve the equations
+        relPart = solve_ivp(f,(r0,10e9),[m0,p0],args = (K_rel,gammaRel),events = [switch,surface], rtol = 1e-8,atol = [m0*1e-10, p0*1e-12],dense_output= allpoints) #simultaneously solve the equations
     
         r_event = relPart.t_events[0][0] # Takes the last radius of centre 
         y_event = relPart.y_events[0][0] # takes the last mass of centre
         
         
-        nonRelPart = solve_ivp(f,(r_event,10e9),y_event,args = (K_nonrel,gammaNonRel),events = surface, rtol = 1e-5,atol = y_event*10e-12,dense_output= allpoints) #simultaneously solve the equations
+        nonRelPart = solve_ivp(f,(r_event,10e9),y_event,args = (K_nonrel,gammaNonRel),events = surface, rtol = 1e-8,atol = y_event*10e-12,dense_output= allpoints) #simultaneously solve the equations
         R = nonRelPart.t_events[0][0] # Takes the last radius of star
         M = nonRelPart.y_events[0][0][0] # takes the last mass of star
 
