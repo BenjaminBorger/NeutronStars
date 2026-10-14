@@ -6,6 +6,9 @@ from scipy.constants import G, c, hbar, m_e, m_n
 from astropy.constants import M_sun
 import sys
 from starDatabase import obj
+
+
+
 def delete_last_line(): # got from stackoverflow https://stackoverflow.com/questions/44565704/how-to-clear-only-last-one-line-in-python-output-console
     # cursor up one line
     sys.stdout.write('\x1b[1A')
@@ -41,7 +44,7 @@ def solve(eps_c,allpoints = False): # eps_c is given through findepsc
     p0 = K_rel*eps_c**gammaRel #initial pressure polytrope
 
     def surface(r, y,K,gamma): # define a surface where pressure basically equals zero and stop there
-        return y[1] - (1e-10 * min(p0, triggerPressure))                 
+        return y[1] - (1e-60 * min(p0, triggerPressure))                 
     surface.terminal = True
     surface.direction = -1
 
@@ -80,3 +83,74 @@ def solve(eps_c,allpoints = False): # eps_c is given through findepsc
 
     if allpoints == True: return (R,M, rs, ys) # return all points if needed (for plot)
     else: return (R,M) # just return last masses for comparisom
+
+
+def find_eps_c(iter,rel): # rel is boolean True or false if true: relatavistic and if not, not relatavistic
+    '''This function makes a guess of epsilon
+    assuming constant density and then takes iterations of the pde solver and hones in 
+    on the correct value of epsilon for each star. After that a real measurement can be made.'''
+    
+    
+    realRadius = obj[iter, 0]*1000 # radius of example star in meters 
+    realMass = obj[iter, 1]*M_sun.value # mass of example star kg
+    
+    K = K_rel
+    gamma = 4/3
+
+    #print("Radius: ",float(realRadius), "     Mass: ", float(realMass)) #check that all is ok thusfar
+    
+    epsilonGuess = (realMass/((4/3)*np.pi*realRadius**3))*(c**2) # guess assuming const density
+    epsilonSpace = np.logspace(np.log10(epsilonGuess)-5,np.log10(epsilonGuess)+5,60) # defines an area which is reasonable for eps to be in
+
+    iteratedRs = np.full(len(epsilonSpace), np.nan) # creates an array of not a numbers the length of epsilon space
+    iteratedMs = np.full(len(epsilonSpace), np.nan)
+    
+    intervals= []#these will be the intervals in epsilonspace within which contain a crossover of sign
+    for i in range(len(epsilonSpace)): # loop for each value in epsilon space(will loop 40 times)
+        
+        R,M = solve(epsilonSpace[i], allpoints=False) # solve the PDE for this value of epsilon and only return the finishing mass and radius
+        iteratedRs[i] = R # add these returned values to thir respective arrays
+        iteratedMs[i] = M
+
+        if i == 0 or np.isnan(iteratedMs[i]) or np.isnan(iteratedMs[i-1]): #or np.isnan(iteratedRs[i-1]) or np.isnan(iteratedRs[i]): # if this si the first iteration,the mass is not a number or the previous mass is not a number, skip
+            continue
+        '''if there is a sign change between the previous mass differnce and this mass difference
+        the real mass must be somewhere in the middle of these (where returned m-real m = 0)
+        this is the epsilon the hone in on'''
+        if  np.sign(iteratedMs[i-1] - realMass) != np.sign(iteratedMs[i] - realMass): #and np.sign(iteratedRs[i-1] - realRadius) != np.sign(iteratedRs[i] - realRadius) :
+                intervals.append([epsilonSpace[i-1], epsilonSpace[i]]) #if one of these sign changes is found, we must add this interval as one of interest
+
+   
+    eps_C_Real = 0
+    goodEpsis = [] #these will have a list of candidates for the initial epsilon value
+
+    goodEpsisR = []
+    for interval in intervals: # go through each interval
+        def massDiffFunc(epsilonVal): #simply solves the equations with this value of epsilon and creates a function with m-realMass
+            
+            r,m = solve(epsilonVal,allpoints=False)
+            
+            return m-realMass
+
+        def radiusDiffFunc(epsilonVal,allpoints=False): # not sure whether to compare radius as well
+            r,m = solve(e)
+            return r-realRadius
+
+        goodEpsiM = brentq(massDiffFunc,interval[0],interval[1]) # hones in on the values of epsilon which return a zero for our defined function 
+        #may return multiple zeroes thats why i need the list
+        goodEpsis.append(goodEpsiM) # when found, add to list
+        #goodEpsiM = brentq(radiusDiffFunc,interval[0],interval[1])
+
+    if len(goodEpsis) == 0: print("No roots Found for object ",iter) # if there are no roots, print this:problem
+
+    bestE, bestErr = None, np.inf # makes our bestE none and our best error infinitely large
+    for e in goodEpsis: # for each good espilon 
+        '''for each good espsilon, check whether the error is better than the last one 
+        if its the best, when the loop ends itll return this value'''
+        r,m = solve(e,allpoints=False)
+        if (np.abs(r/realRadius-1))<bestErr:
+            bestE = e
+            bestErr = np.abs(r/realRadius-1)
+
+    return bestE
+                
