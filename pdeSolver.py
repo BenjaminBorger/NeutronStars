@@ -85,7 +85,7 @@ def solve(eps_c,allpoints = False): # eps_c is given through findepsc
     else: return (R,M) # just return last masses for comparisom
 
 
-def find_eps_c(iter,rel): # rel is boolean True or false if true: relatavistic and if not, not relatavistic
+def find_eps_c(iter,rel): # i took this out. rel is boolean True or false if true: relatavistic and if not, not relatavistic
     '''This function makes a guess of epsilon
     assuming constant density and then takes iterations of the pde solver and hones in 
     on the correct value of epsilon for each star. After that a real measurement can be made.'''
@@ -100,7 +100,7 @@ def find_eps_c(iter,rel): # rel is boolean True or false if true: relatavistic a
     #print("Radius: ",float(realRadius), "     Mass: ", float(realMass)) #check that all is ok thusfar
     
     epsilonGuess = (realMass/((4/3)*np.pi*realRadius**3))*(c**2) # guess assuming const density
-    epsilonSpace = np.logspace(np.log10(epsilonGuess)-5,np.log10(epsilonGuess)+5,60) # defines an area which is reasonable for eps to be in
+    epsilonSpace = np.logspace(np.log10(epsilonGuess)-5,np.log10(epsilonGuess)+5,40) # defines an area which is reasonable for eps to be in
 
     iteratedRs = np.full(len(epsilonSpace), np.nan) # creates an array of not a numbers the length of epsilon space
     iteratedMs = np.full(len(epsilonSpace), np.nan)

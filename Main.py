@@ -8,26 +8,47 @@ from astropy.constants import M_sun
 import pdeSolver
 from matplotlib.colors import LinearSegmentedColormap
 #from pdeSolver import gammaNonRel,gammaRel,K_nonrel,K_rel,triggerPressure
-from pdeSolver import solve, find_eps_c
+from pdeSolver import solve, find_eps_c,delete_last_line
 ###Problem at the moment is that the radius it calculates is differnt to the radius I give it. 
-          
+import shutil
+
+def loadbar(i, total, prefix="", suffix="", decimals=1, fill='>'):
+    pct = f'{100 * i / total:.{decimals}f}%'
+    length = max(1, shutil.get_terminal_size().columns - len(f'{prefix} || {pct} {suffix}') - 1)
+    n = length * i // total
+    print(f'\r{prefix} |{fill * n}{"-" * (length - n)}| {pct} {suffix}', end='\r' if i < total else '\n')
 #plotting
 #could maybe add some sort of circle that has the pressure so as the radius goes outwards, it changes colour (bit naff)
 
 limit_mass = -np.inf      # largest finite mass seen across all objects
 limit_radius = None  
+objectsLength = len(obj)
 
-for i in range(len(obj)):
+
+#Sean Rs Idea - make iterations more spaced out until the end where they get tighter - run faster
+
+
+loadbar(0, objectsLength, suffix = "complete")
+FMasses = []
+FRadii = []
+for i in range(objectsLength):
+    #delete_last_line()
+    loadbar(i+1, objectsLength, suffix = "complete")
+    
     realMass = obj[i][1]*M_sun.value #import the real mass and radius for comparison
     realRadius = obj[i][0]*1000
+    #print(realMass)
+    #print(realRadius)
     iterEps_C = find_eps_c(i, rel=False) # 
     if iterEps_C is None: # if theres no good value of epsilon
         print(f"Skipping object {i}: no valid epsilon_c")
         break
         #continue
     r, m, radius_grid, states = solve(iterEps_C,allpoints=True)
-    print(f"modeled: {r/1000 :.2f} km , input: {realRadius/1000 :.2f} km , "
-          f"difference: {((r - realRadius)/1000):.2f} km")
+    FMasses.append(m)
+    FRadii.append(r)
+    #print(f"modeled: {r/1000 :.2f} km , input: {realRadius/1000 :.2f} km , "
+          #f"difference: {((r - realRadius)/1000):.2f} km")
     #mass_profile = states[0]
     #pressure_profile = states[1]
     mass_profile = np.asarray(states[0])
@@ -41,13 +62,17 @@ for i in range(len(obj)):
         if mass_profile[j] > limit_mass:
             limit_mass = mass_profile[j]
             limit_radius = radius_grid[j]
-
+    
     plt.plot(mass_profile,radius_grid)
+    #plt.show()
+
+plt.plot(FMasses,FRadii)
+
 
 
 #plt.axhline(y=limit_mass, color='r', linestyle='--',label=f'Limiting mass = {limit_mass:.3e} kg')
 
-print(f"Limiting Mass: {limit_mass/M_sun} solar masses")
+print(f"Limiting Mass: {limit_mass/M_sun.value} solar masses")
 plt.title('Rel Rad Mass Relation')
 plt.legend()
 plt.xlabel('Mass (Kg)')
@@ -63,7 +88,7 @@ def plot_pressure():
     order = np.argsort(r)
     r, p = r[order], p[order]
 
-    # Debug: check these first
+
     print("radius range:", r.min(), r.max())
     print("pressure range:", p.min(), p.max())
 
